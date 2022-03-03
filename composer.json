@@ -1,0 +1,12 @@
+{
+    "name": "joost/php-assignment",
+    "description": "PHP assignment",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Joost",
+            "email": "joost@kaashosting.nl"
+        }
+    ],
+    "require": {}
+}
