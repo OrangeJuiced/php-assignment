@@ -37,6 +37,7 @@ class BicycleController extends Controller
 
         $this->render('bicycles/index.php', [
             'bicycles' => $bicycle->all(),
+            'csrf' => SimpleRouter::router()->getCsrfVerifier()->getTokenProvider()->getToken(),
         ]);
     }
 
@@ -63,6 +64,8 @@ class BicycleController extends Controller
         $bicycle = new Bicycle();
 
         $bicycle->find($id)->delete();
+
+        header('Location: /');
     }
 
     public function test()

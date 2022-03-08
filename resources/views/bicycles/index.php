@@ -11,34 +11,35 @@
                         <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Suppliers</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                             <th scope="col" class="relative px-6 py-3">
                                 <span class="sr-only">Edit or delete</span>
                             </th>
                         </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
+                        {% for bicycle in bicycles %}
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-500">Optimization</div>
+                                <div class="text-sm text-gray-900">{{ bicycle.name }}</div>
+                                <div class="text-sm text-gray-500">{{ bicycle.description }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">Regional Paradigm Technician</div>
-                                <div class="text-sm text-gray-500">Optimization</div>
+                                <div class="text-sm text-gray-500">{{ bicycle.name }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"> Active </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Admin</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">€{{ bicycle.price }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <a href="#" class="text-indigo-600 hover:text-indigo-900 pr-4">Edit</a>
-                                <a href="#" class="text-indigo-600 hover:text-indigo-900">Delete</a>
+                                <form action="/bicycles/{{ bicycle.id }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                                    <input type="hidden" name="_method" value="DELETE" />
+                                    <input type="hidden" name="id" value="DELETE" />
+                                    <button type="submit" class="text-indigo-600 hover:text-indigo-900">Delete</button>
+                                </form>
                             </td>
                         </tr>
-
-                        <!-- More people... -->
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>
