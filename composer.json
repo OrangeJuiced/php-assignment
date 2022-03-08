@@ -5,8 +5,22 @@
     "authors": [
         {
             "name": "Joost",
-            "email": "joost@kaashosting.nl"
+            "email": "mail@juiced.space"
         }
     ],
-    "require": {}
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "require-dev": {
+        "symfony/var-dumper": "^6.0"
+    },
+    "require": {
+        "php": "^8.0",
+        "ext-pdo": "*",
+        "vlucas/phpdotenv": "^5.4",
+        "twig/twig": "^3.0",
+        "pecee/simple-router": "4.3.7.2"
+    }
 }
