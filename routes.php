@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BicycleController;
+use App\Http\Controllers\SupplierController;
 use Pecee\Http\Middleware\BaseCsrfVerifier;
 use Pecee\SimpleRouter\SimpleRouter;
 
@@ -11,5 +12,6 @@ SimpleRouter::get('/', function() {
 });
 
 SimpleRouter::resource('/bicycles', BicycleController::class);
+SimpleRouter::resource('/suppliers', SupplierController::class);
 
 SimpleRouter::get('/test', [BicycleController::class, 'test']);

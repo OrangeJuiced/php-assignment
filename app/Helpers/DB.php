@@ -11,7 +11,9 @@ class DB
 
     private string $table;
 
-    private array $where = [];
+    public array $where = [];
+
+    private array $joins = [];
 
     private string $model;
 
@@ -30,6 +32,11 @@ class DB
 
     private PDOStatement $statement;
 
+    /**
+     * DB helper constructor.
+     *
+     * @param $model
+     */
     public function __construct($model)
     {
         $this->model = $model;
@@ -38,11 +45,25 @@ class DB
         $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
 
+    /**
+     * Set the table to use.
+     *
+     * @param string $table
+     * @return void
+     */
     public function table(string $table): void
     {
         $this->table = $table;
     }
 
+    /**
+     * Add a where statement.
+     *
+     * @param string $column
+     * @param string $comparator
+     * @param $value
+     * @return $this
+     */
     public function where(string $column, string $comparator, $value): self
     {
         $this->where[] = [
@@ -56,6 +77,12 @@ class DB
         return $this;
     }
 
+    /**
+     * Start a select query.
+     *
+     * @param array|string $columns
+     * @return $this
+     */
     public function select(array|string $columns = ['*']): self
     {
         $this->action = 'SELECT';
@@ -69,15 +96,26 @@ class DB
         return $this;
     }
 
-    public function get(): array
+    /**
+     * Execute a select query.
+     *
+     * @param array|string $columns
+     * @return array
+     */
+    public function get(array|string $columns = ['*']): array
     {
-        $this->select();
+        $this->select($columns);
 
         $this->executeStatement();
 
         return $this->statement->fetchAll(PDO::FETCH_CLASS, $this->model);
     }
 
+    /**
+     * Get all records.
+     *
+     * @return array|object
+     */
     public function all(): array|object
     {
         $this->select();
@@ -87,6 +125,12 @@ class DB
         return $this->statement->fetchAll(PDO::FETCH_CLASS, $this->model);
     }
 
+    /**
+     * Start an update query.
+     *
+     * @param array $data
+     * @return void
+     */
     public function update(array $data): void
     {
         if(empty($this->where)) {
@@ -102,7 +146,13 @@ class DB
         $this->executeStatement();
     }
 
-    public function insert(array $data): void
+    /**
+     * Start an insert query.
+     *
+     * @param array $data
+     * @return int
+     */
+    public function insert(array $data): int
     {
         $this->action = 'INSERT';
 
@@ -114,8 +164,15 @@ class DB
         }
 
         $this->executeStatement();
+
+        return $this->connection->lastInsertId();
     }
 
+    /**
+     * Start a delete statement.
+     *
+     * @return void
+     */
     public function delete(): void
     {
         if(empty($this->where)) {
@@ -127,6 +184,31 @@ class DB
         $this->executeStatement();
     }
 
+    /**
+     * Add a left join.
+     *
+     * @param string $table
+     * @param string $source
+     * @param string $target
+     * @return $this
+     */
+    public function leftJoin(string $table, string $source, string $target)
+    {
+        $this->joins[] = [
+            'type' => 'LEFT',
+            'table' => $table,
+            'source' => $source,
+            'target' => $target,
+        ];
+
+        return $this;
+    }
+
+    /**
+     * Execute the built SQL query.
+     *
+     * @return void
+     */
     private function executeStatement(): void
     {
         $columns = implode(', ', $this->columns);
@@ -134,15 +216,12 @@ class DB
         switch ($this->action) {
             case 'SELECT':
                 $this->query = "SELECT $columns FROM $this->table";
+                $this->addJoins();
                 $this->addWheres();
                 break;
             case 'UPDATE':
-                $this->query = "UPDATE $this->table";
-
-                foreach ($this->bindings['SET'] as $column => $value) {
-                    $this->query .= " SET {$column}=:SET{$column}";
-                }
-
+                $this->query = "UPDATE $this->table SET";
+                $this->addUpdates();;
                 $this->addWheres();
                 break;
             case 'DELETE':
@@ -154,7 +233,6 @@ class DB
                 $values = implode(', ', $this->insert['values']);
 
                 $this->query = "INSERT INTO $this->table ($columns) VALUES ($values)";
-                dump($this->query);
                 break;
         }
 
@@ -165,6 +243,40 @@ class DB
         $this->statement->execute();
     }
 
+    /**
+     * Execute a raw SQL query.
+     *
+     * @param string $query
+     * @return bool|array
+     */
+    public function rawQuery(string $query = ''): bool|array
+    {
+        $this->query = $query;
+
+        $this->statement = $this->connection->prepare($this->query);
+
+        $this->statement->execute();
+
+        return $this->statement->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    /**
+     * Add the set joins to the query.
+     *
+     * @return void
+     */
+    private function addJoins(): void
+    {
+        foreach ($this->joins as $key => $join) {
+            $this->query .= " {$join['type']} JOIN {$join['table']} ON {$this->table}.{$join['source']} = {$join['table']}.{$join['target']}";
+        }
+    }
+
+    /**
+     * Add the set wheres to the query.
+     *
+     * @return void
+     */
     private function addWheres(): void
     {
         if(empty($this->where)) return;
@@ -172,9 +284,9 @@ class DB
         $iterator = 1;
         foreach ($this->where as $key => $value) {
             if ($iterator === 1) {
-                $this->query .= " WHERE {$value['column']}{$value['comparator']}:WHERE{$value['column']}";
+                $this->query .= " WHERE {$value['column']} {$value['comparator']} :WHERE{$value['column']}";
             } else {
-                $this->query .= " AND {$value['column']}{$value['comparator']}:WHERE{$value['column']}";
+                $this->query .= " AND {$value['column']} {$value['comparator']} :WHERE{$value['column']}";
             }
 
             $iterator++;
@@ -182,7 +294,31 @@ class DB
 
         $this->where = [];
     }
-    
+
+    /**
+     * Add the set updates to the query.
+     *
+     * @return void
+     */
+    private function addUpdates(): void
+    {
+        $length = count($this->bindings['SET']);
+
+        $iterator = 1;
+        foreach ($this->bindings['SET'] as $column => $value) {
+            $this->query .= " {$column}=:SET{$column}";
+
+            if($iterator != $length) $this->query .= ",";
+
+            $iterator++;
+        }
+    }
+
+    /**
+     * Process all bindings.
+     *
+     * @return void
+     */
     private function processBindings(): void
     {
         foreach ($this->bindings as $type => $binding) {
